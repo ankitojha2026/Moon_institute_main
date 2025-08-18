@@ -17,7 +17,7 @@ $options = [
 try {
     // Create a PDO instance (connect to the database)
     $pdo = new PDO($dsn, $username, $password, $options);
-    echo json_encode("dtabase connected successfully");;
+   
 } catch (\PDOException $e) {
     // Agar connection fail hota hai to
     http_response_code(500);

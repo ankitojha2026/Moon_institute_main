@@ -1,5 +1,5 @@
 // 1. API_BASE_URL ko local PHP server par point karein
-const API_BASE_URL = 'http://localhost/moon/backend/api/';
+const API_BASE_URL = 'http://localhost/moon/backend/api';
 
 // Generic API request function
 const apiRequest = async (endpoint, options = {}) => {

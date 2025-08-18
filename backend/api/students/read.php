@@ -1,7 +1,17 @@
 <?php
 // Headers
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: http://localhost:8080");
 header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+// The browser sends an 'OPTIONS' method request first to check CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // Just send back a 200 OK response for OPTIONS request
+    http_response_code(200);
+    exit();
+}
 
 // Include database and object files
 include_once '../../config/database.php';
@@ -27,7 +37,9 @@ try {
             extract($row);
             
             // Add a full URL path for the photo
-            $photo_url = !empty($student_photo) ? "http://{$_SERVER['HTTP_HOST']}/uploads/student_photos/{$student_photo}" : null;
+            $photo_url = !empty($student_photo) 
+    ? "http://localhost/moon/backend/uploads/student_photos/" . $student_photo 
+    : null;
 
             $student_item = array(
                 "id" => $id,

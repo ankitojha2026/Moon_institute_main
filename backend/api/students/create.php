@@ -1,11 +1,21 @@
 <?php
 // PDO Database connection file
+
+header("Access-Control-Allow-Origin: http://localhost:8080");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+// The browser sends an 'OPTIONS' method request first to check CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // Just send back a 200 OK response for OPTIONS request
+    http_response_code(200);
+    exit();
+}
+
 include '../../config/database.php';
 
-// Headers
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
 
 // ------------------ File Upload Logic ------------------
 $uploadDir = '../../uploads/student_photos/';
@@ -20,11 +30,12 @@ function handleFileUpload($fileKey, $uploadDir) {
         $destPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($fileTmpPath, $destPath)) {
-            return $destPath; // return path if upload success
+            return $fileName; // ✅ sirf file ka naam return karo
         }
     }
-    return null; // return null if not uploaded
+    return null;
 }
+
 
 // Call for photo and result
 $studentPhotoPath = handleFileUpload('studentPhoto', $uploadDir);

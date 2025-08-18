@@ -1,16 +1,42 @@
 <?php
 // PDO Database connection file
+header("Access-Control-Allow-Origin: http://localhost:8080");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+// The browser sends an 'OPTIONS' method request first to check CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // Just send back a 200 OK response for OPTIONS request
+    http_response_code(200);
+    exit();
+}
 include '../../config/database.php';
 
 // Headers (same as before)
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
 
 // ... (File upload logic - ismein koi change nahi hai) ...
 $uploadDir = '../../uploads/course_pdfs/';
 if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
-function handleFileUpload($fileKey, $uploadDir) { /* ... same code ... */ }
+
+
+function handleFileUpload($fileKey, $uploadDir) {
+    if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES[$fileKey]['tmp_name'];
+        $fileName = time() . '_' . basename($_FILES[$fileKey]['name']); // unique filename
+        $destPath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($fileTmpPath, $destPath)) {
+            return $fileName; // ✅ sirf file ka naam return karo
+        }
+    }
+    return null;
+}
+
+
+
+
 $coursePdfPath = handleFileUpload('coursePdf', $uploadDir); 
 
 // ... (Get Data from $_POST - ismein koi change nahi hai) ...
