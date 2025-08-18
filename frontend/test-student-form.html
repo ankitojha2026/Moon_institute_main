@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Form Test - Moon Institute</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-btn { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        .result { margin: 20px 0; padding: 10px; border-radius: 5px; background: #f8f9fa; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Student Form Test - Moon Institute</h1>
+    
+    <div class="form-group">
+        <label>Student Name:</label>
+        <input type="text" id="studentName" value="Test Student">
+    </div>
+    
+    <div class="form-group">
+        <label>Password:</label>
+        <input type="password" id="password" value="123456">
+    </div>
+    
+    <div class="form-group">
+        <label>Father's Name:</label>
+        <input type="text" id="fatherName" value="Test Father">
+    </div>
+    
+    <div class="form-group">
+        <label>Gender:</label>
+        <select id="gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>Course ID (from database):</label>
+        <input type="text" id="course" placeholder="Enter course ID from database">
+    </div>
+    
+    <div class="form-group">
+        <label>Course Price:</label>
+        <input type="text" id="coursePrice" value="25000">
+    </div>
+    
+    <div class="form-group">
+        <label>School Name:</label>
+        <input type="text" id="schoolName" value="Test School">
+    </div>
+    
+    <div class="form-group">
+        <label>Mobile Number:</label>
+        <input type="text" id="mobileNumber" value="1234567890">
+    </div>
+    
+    <div class="form-group">
+        <label>Date of Birth:</label>
+        <input type="date" id="dateOfBirth" value="2000-01-01">
+    </div>
+    
+    <div class="form-group">
+        <label>Cast:</label>
+        <select id="cast">
+            <option value="General">General</option>
+            <option value="OBC">OBC</option>
+            <option value="SC">SC</option>
+            <option value="ST">ST</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>Aadhar Card Number:</label>
+        <input type="text" id="aadharCardNumber" value="123456789012">
+    </div>
+    
+    <div class="form-group">
+        <label>Full Address:</label>
+        <input type="text" id="fullAddress" value="Test Address, Test City">
+    </div>
+    
+    <button class="test-btn" onclick="testStudentCreation()">Test Student Creation</button>
+    <button class="test-btn" onclick="getCourses()">Get Available Courses</button>
+    
+    <div id="result"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        function showResult(message, isSuccess = true) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+        
+        async function getCourses() {
+            try {
+                const response = await fetch(`${API_BASE}/courses`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    let coursesList = '<h3>Available Courses:</h3><ul>';
+                    data.data.forEach(course => {
+                        coursesList += `<li><strong>${course.courseName}</strong> - ID: ${course._id} - Price: ₹${course.price}</li>`;
+                    });
+                    coursesList += '</ul>';
+                    showResult(coursesList, true);
+                } else {
+                    showResult(`❌ Failed to get courses: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResult(`❌ Error getting courses: ${error.message}`, false);
+            }
+        }
+        
+        async function testStudentCreation() {
+            try {
+                const studentData = {
+                    studentName: document.getElementById('studentName').value,
+                    password: document.getElementById('password').value,
+                    fatherName: document.getElementById('fatherName').value,
+                    gender: document.getElementById('gender').value,
+                    course: document.getElementById('course').value,
+                    coursePrice: document.getElementById('coursePrice').value,
+                    schoolName: document.getElementById('schoolName').value,
+                    mobileNumber: document.getElementById('mobileNumber').value,
+                    dateOfBirth: new Date(document.getElementById('dateOfBirth').value).toISOString(),
+                    cast: document.getElementById('cast').value,
+                    aadharCardNumber: document.getElementById('aadharCardNumber').value,
+                    fullAddress: document.getElementById('fullAddress').value
+                };
+                
+                console.log('Sending student data:', studentData);
+                
+                const response = await fetch(`${API_BASE}/students`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(studentData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Student created successfully! ID: ${data.data._id}`, true);
+                } else {
+                    let errorMessage = `❌ Failed to create student (${response.status}): `;
+                    if (data.errors) {
+                        errorMessage += data.errors.map(err => `${err.path}: ${err.msg}`).join(', ');
+                    } else {
+                        errorMessage += data.message || 'Unknown error';
+                    }
+                    showResult(errorMessage, false);
+                }
+            } catch (error) {
+                showResult(`❌ Error creating student: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>
