@@ -51,6 +51,11 @@ export const studentAPI = {
       body: formData,
     });
   },
+  // Get birthday feed (Updated to return 7 students)
+   getBirthdayFeed: async () => {
+    return apiRequest('/students/birthday_feed.php');
+  },
+
 
   // Get all students
   getAll: async (params = {}) => {
