@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Trophy, GraduationCap, BookOpen, Users, Award, Clock } from "lucide-react";
+import { Trophy, GraduationCap, BookOpen } from "lucide-react";
 
 const WhyChooseSection = () => {
   return (
@@ -13,9 +13,9 @@ const WhyChooseSection = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Card 1: Proven Results */}
-            <Card className="border-0 shadow-lg text-center">
+            <Card className="border-0 shadow-lg text-center transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-pink-300 hover:bg-pink-50">
               <CardContent className="p-8">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300 group-hover:bg-yellow-200">
                   <Trophy className="w-8 h-8 text-yellow-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
@@ -28,9 +28,9 @@ const WhyChooseSection = () => {
             </Card>
 
             {/* Card 2: Expert Faculty */}
-            <Card className="border-0 shadow-lg text-center">
+            <Card className="border-0 shadow-lg text-center transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-green-300 hover:bg-green-50">
               <CardContent className="p-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300 group-hover:bg-green-200">
                   <GraduationCap className="w-8 h-8 text-green-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
@@ -43,9 +43,9 @@ const WhyChooseSection = () => {
             </Card>
 
             {/* Card 3: Comprehensive Study Material */}
-            <Card className="border-0 shadow-lg text-center">
+            <Card className="border-0 shadow-lg text-center transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-blue-700 hover:bg-blue-50">
               <CardContent className="p-8">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors duration-300 group-hover:bg-blue-700">
                   <BookOpen className="w-8 h-8 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">

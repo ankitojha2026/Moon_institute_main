@@ -155,10 +155,40 @@ export const eventAPI = {
 };
 
 export const contactAPI = {
-  // TODO: Update endpoints to match your PHP file structure
-  submit: async (contactData) => apiRequest('/contacts/create.php', { method: 'POST', body: JSON.stringify(contactData) }),
-  getAll: async () => apiRequest('/contacts/read.php'),
-  // ... and so on for other contact actions
+  // GET all contacts (with search/filter)
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/contacts/read.php?${queryString}`);
+  },
+
+  // GET statistics
+  getStats: async () => {
+    return apiRequest('/contacts/stats.php');
+  },
+
+  // Update a contact's status
+  update: async (contactId, updateData) => {
+    return apiRequest('/contacts/update.php', {
+      method: 'POST', // Using POST for broader compatibility
+      body: JSON.stringify({ id: contactId, ...updateData }),
+    });
+  },
+
+  // Delete a contact
+  delete: async (contactId) => {
+    return apiRequest('/contacts/delete.php', {
+      method: 'DELETE',
+      body: JSON.stringify({ id: contactId }),
+    });
+  },
+  
+  // Iski zaroorat aapko public contact form mein padegi
+  submit: async (contactData) => {
+    return apiRequest('/contacts/create.php', {
+      method: 'POST',
+      body: JSON.stringify(contactData)
+    });
+  }
 };
 
 export const healthCheck = async () => {

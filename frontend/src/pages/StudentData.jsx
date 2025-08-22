@@ -8,6 +8,12 @@ import {
   LogOut, 
   Download
 } from 'lucide-react';
+import { CiLocationArrow1 } from "react-icons/ci";
+
+import { IoCallOutline, IoSchoolOutline } from 'react-icons/io5';
+import { FaRegAddressCard} from 'react-icons/fa';
+import { studentAPI } from '../services/api';
+
 import { toast } from 'sonner';
 
 const StudentData = () => {
@@ -44,6 +50,15 @@ const StudentData = () => {
     toast.success('Logged out successfully');
     navigate('/student-login');
   };
+
+
+
+    console.log('Student Data:', studentData);
+
+
+
+
+
 
 
 
@@ -134,9 +149,10 @@ const StudentData = () => {
               <div className="text-center">
                 {/* Student Image */}
                 <div className="mb-6">
-                  {studentData.studentPhoto?.url ? (
+
+                  {studentData.studentPhotoUrl ? (
                     <img
-                      src={studentData.studentPhoto.url}
+                      src={studentData.studentPhotoUrl}
                       alt={studentData.studentName}
                       className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-blue-100"
                     />
@@ -145,27 +161,81 @@ const StudentData = () => {
                       <User className="w-16 h-16 text-blue-400" />
                     </div>
                   )}
+
+
                 </div>
 
                 {/* Student Info */}
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {studentData.studentName}
+                  {studentData.student_name}
                 </h2>
                 
                 <div className="space-y-3 text-left">
+
+                  {/* date_of_birth */}
                   <div className="flex items-center text-gray-600">
                     <Calendar className="w-4 h-4 mr-3 text-blue-500" />
                     <span className="text-sm">
-                      <span className="font-medium">Date of Birth:</span> {formatDate(studentData.dateOfBirth)}
+                      <span className="font-medium">Date of Birth:</span> {formatDate(studentData.
+date_of_birth)}
                     </span>
                   </div>
+
+                  {/* aadharcard */}
+
+                        <div className="flex items-center text-gray-600">
+                    <FaRegAddressCard className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-sm">
+                      <span className="font-medium">Aadhar No:</span> {(studentData.
+aadhar_card_number)}
+                    </span>
+                  </div>
+                            {/* mobile number */}
+                        <div className="flex items-center text-gray-600">
+                    <IoCallOutline className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-sm">
+                      <span className="font-medium">Mobile Number:</span> {(studentData.
+mobile_number)}
+                    </span>
+                  </div>
+
+                        {/* gender */}
+                        <div className="flex items-center text-gray-600">
+                    <CiLocationArrow1 className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-sm">
+                      <span className="font-medium">Gender:</span> {(studentData.
+gender)}
+                    </span>
+                  </div>
+
+
+                        <div className="flex items-center text-gray-600">
+                    <IoSchoolOutline className="w-4 h-4 mr-3 text-blue-500" />
+                    <span className="text-sm">
+                      <span className="font-medium">School Name:</span> {(studentData.
+school_name)}
+                    </span>
+                  </div>
+
+
+
                   
+
+
+
+
+
+                  {/* course */}
                   <div className="flex items-center text-gray-600">
                     <BookOpen className="w-4 h-4 mr-3 text-blue-500" />
                     <span className="text-sm">
-                      <span className="font-medium">Course:</span> {studentData.course?.courseName || 'Not assigned'}
+                      <span className="font-medium">Course:</span> {studentData.course
+ || 'Not assigned'}
                     </span>
                   </div>
+
+
+
                 </div>
               </div>
             </div>

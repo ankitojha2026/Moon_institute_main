@@ -3,12 +3,14 @@ import BirthdaySection from "@/components/Home/BirthdaySection";
 import FounderSection from "@/components/Home/FounderSection";
 import TopStudentsSection from "@/components/Home/TopStudentsSection";
 import WhyChooseSection from "@/components/Home/WhyChooseSection";
+import HeroSectionSlider from "@/components/Home/HeroSectionSlider";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
       <main>
         <HeroSection />
+        <HeroSectionSlider />
         <BirthdaySection />
         <FounderSection />
         {/* <TopStudentsSection /> */}

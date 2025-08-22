@@ -38,7 +38,7 @@ try {
         extract($row);
         
         // Construct the full URL for the PDF
-        $pdf_url = !empty($course_pdf_path) ? "http://{$_SERVER['HTTP_HOST']}/your_project_name/uploads/course_pdfs/{$course_pdf_path}" : null;
+        $pdf_url = !empty($course_pdf_path) ? "http://{$_SERVER['HTTP_HOST']}/moon/backend/uploads/course_pdfs/{$course_pdf_path}" : null;
         
         // Create course array
         $course_arr = [

@@ -1,64 +1,71 @@
 <?php
-// Headers
+// Headers (No change needed here, they are perfect)
 header("Access-Control-Allow-Origin: http://localhost:8080");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// The browser sends an 'OPTIONS' method request first to check CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // Just send back a 200 OK response for OPTIONS request
     http_response_code(200);
     exit();
 }
 
-// Include database
 include_once '../../config/database.php';
 
-// Get raw posted data
 $data = json_decode(file_get_contents("php://input"));
 
-if (empty($data->mobileNumber) || empty($data->password)) {
+
+
+// UPDATED: Check for 'studentName' to match the React component
+if (empty($data->studentName) || empty($data->password) || empty($data->phoneNumber)) {
     http_response_code(400);
-    echo json_encode(["message" => "Mobile number and password are required."]);
+    echo json_encode(["success" => false, "message" => "Student name and password are required."]);
     exit;
 }
 
 try {
-    $query = "SELECT id, student_name, password FROM students WHERE mobile_number = ? LIMIT 0,1";
+    // UPDATED: Select all student data and use student_name for lookup
+    $query = "SELECT * FROM students WHERE mobile_number = :mobileNumber LIMIT 1";
     
     $stmt = $pdo->prepare($query);
-    $stmt->bindParam(1, $data->mobileNumber);
+    $stmt->bindParam(':mobileNumber', $data->phoneNumber);
     $stmt->execute();
     
-    $num = $stmt->rowCount();
-
-    if ($num > 0) {
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $id = $row['id'];
-        $student_name = $row['student_name'];
-        $password_hash = $row['password'];
-
+    if ($stmt->rowCount() > 0) {
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
         // Verify password
-        if (password_verify($data->password, $password_hash)) {
-            // NOTE: For a real app, generate a JWT (JSON Web Token) here for security.
+        if (password_verify($data->password, $student['password'])) {
+            // Login successful!
+            
+            
+            // --- IMPORTANT: Remove password before sending data to client ---
+            unset($student['password']);
+
+            // --- IMPROVEMENT: Add full photo URL ---
+            $photo_url = !empty($student['student_photo']) 
+                ? "http://{$_SERVER['HTTP_HOST']}/moon/backend/uploads/student_photos/{$student['student_photo']}" 
+                : null;
+            $student['studentPhotoUrl'] = $photo_url;
+            
             http_response_code(200);
-            echo json_encode(array(
+            // --- UPDATED: Send a structured response with all student data ---
+            echo json_encode([
+                "success" => true,
                 "message" => "Login successful.",
-                "studentId" => $id,
-                "studentName" => $student_name
-            ));
+                "data" => $student
+            ]);
         } else {
-            http_response_code(401); // Unauthorized
-            echo json_encode(array("message" => "Invalid credentials."));
+            // Invalid password
+            http_response_code(401);
+            echo json_encode(["success" => false, "message" => "Invalid credentials provided."]);
         }
     } else {
-        http_response_code(401); // Unauthorized
-        echo json_encode(array("message" => "Invalid credentials."));
+        // Student not found
+        http_response_code(404);
+        echo json_encode(["success" => false, "message" => "No student found with that name."]);
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(array("message" => "Login failed.", "error" => $e->getMessage()));
+    echo json_encode(["success" => false, "message" => "Login failed due to a server error.", "error" => $e->getMessage()]);
 }
 ?>

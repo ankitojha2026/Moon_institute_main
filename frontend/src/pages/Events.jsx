@@ -27,29 +27,21 @@ const Events = () => {
   const badgeTexts = ['NEW', 'HOT', 'SPECIAL', 'FEATURED', 'POPULAR', 'TRENDING'];
 
   // Fetch events from API
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await eventAPI.getAll();
-        
-        if (response.success) {
-          setEvents(response.data);
-        } else {
-          setError('Failed to fetch events');
-        }
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setError('Failed to load events');
-      } finally {
-        setLoading(false);
-      }
-    };
+ useEffect(() => {
+        fetchEvents();
+    }, []);
 
-    fetchEvents();
-  }, []);
+    const fetchEvents = async () => {
+        try {
+            setLoading(true);
+            const response = await eventAPI.getAll();
+            setEvents(response.records || []);
+        } catch (err) {
+            toast.error('Events fetch karne mein error: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
   // Format date and time for display
   const formatDateTime = (event) => {

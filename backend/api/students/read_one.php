@@ -44,7 +44,7 @@ try {
             "cast" => $row['cast'],
             "aadharCardNumber" => $row['aadhar_card_number'],
             "fullAddress" => $row['full_address'],
-            "studentPhotoUrl" => !empty($row['student_photo']) ? "http://{$_SERVER['HTTP_HOST']}/uploads/student_photos/{$row['student_photo']}" : null,
+            "studentPhotoUrl" => !empty($row['student_photo']) ? "http://{$_SERVER['HTTP_HOST']}/moon/backend/uploads/student_photos/{$row['student_photo']}" : null,
             "resultUrl" => !empty($row['result_path']) ? "http://{$_SERVER['HTTP_HOST']}/uploads/student_results/{$row['result_path']}" : null,
             "createdAt" => $row['created_at']
         );
