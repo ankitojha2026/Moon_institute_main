@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import MissionVisionSection from "@/components/About/MissionVisionSection";
 import FacultySection from "@/components/About/FacultySection";
+import ScrollToTopButton from "../components/common/ScrollToTopButton";
 
 const About = () => {
   return (
@@ -52,6 +53,7 @@ const About = () => {
         </section>
         <FacultySection />
       </main>
+         <ScrollToTopButton/>
     </div>
   );
 };

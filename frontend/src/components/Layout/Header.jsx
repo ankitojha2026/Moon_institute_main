@@ -23,9 +23,12 @@ const Header = () => {
     <header className="bg-gray-100 text-black shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center justify-between">
+         
+         <Link to="/" className="text-2xl font-bold text-black">
+
           <div className="flex items-center space-x-3">
             <img 
-              src="/images/efb325c5-2d6a-4440-a05d-13950ca4d29c.png" 
+              src="/images/logo.png" 
               alt="The Moon Institute Logo" 
               className="w-12 h-12 object-contain rounded-full"
             />
@@ -34,6 +37,8 @@ const Header = () => {
               <p className="text-xs text-gray-600">Where Learning Meets Success</p>
             </div>
           </div>
+
+         </Link>
           
           <div className="hidden md:flex items-center space-x-8">
             <Link 

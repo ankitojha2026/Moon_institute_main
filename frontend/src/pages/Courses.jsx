@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Sprout, Rocket, Zap, Stethoscope, FileText, Target, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import ScrollToTopButton from "../components/common/ScrollToTopButton";
 
 const Courses = () => {
   return (
@@ -364,6 +365,8 @@ const Courses = () => {
           </div>
         </section>
       </main>
+
+         <ScrollToTopButton/>
     </div>
   );
 };

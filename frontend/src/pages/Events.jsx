@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Calendar, Target, Loader2 } from "lucide-react";
 import { eventAPI } from "../services/api";
+import ScrollToTopButton from "../components/common/ScrollToTopButton";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -274,7 +275,12 @@ const Events = () => {
           </div>
         </section>
       </main>
+        <ScrollToTopButton/>
     </div>
+
+
+            // scroll to top button visible after 200 px
+          
   );
 };
 

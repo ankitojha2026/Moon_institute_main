@@ -12,7 +12,7 @@ const FounderSection = () => {
                 <div className="lg:w-1/3">
                   <div className="h-full">
                     <img
-                      src="/images/anujpic.jpg"
+                      src="/images/founder.jpg"
                       alt="Mr. Guru Sharma - Founder of The Moon Institute"
                       className="w-full h-full object-cover"
                       onError={(e) => {

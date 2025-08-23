@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -20,18 +20,39 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminRedirect from './pages/AdminRedirect';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/common/ScrollToTop';
+import Loaderx from './components/common/Loderx';
+
+// Loader Component
+
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Loader ko 3.5 sec tak dikhana
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <Loaderx />;
+  }
+
   return (
     <Router>
+      <ScrollToTop />
       <div className="App">
         <Routes>
           {/* Public Routes with Header & Footer */}
-          <Route path="/" element={<Layout> <Index /></Layout>} />
-          <Route path="/about" element={<Layout> <About /></Layout>} />
-          <Route path="/courses" element={<Layout> <Courses /></Layout>} />
-          <Route path="/events" element={<Layout> <Events /></Layout>} />
-          <Route path="/contact" element={<Layout> <Contact /></Layout>} />
+          <Route path="/" element={<Layout><Index /></Layout>} />
+          <Route path="/about" element={<Layout><About /></Layout>} />
+          <Route path="/courses" element={<Layout><Courses /></Layout>} />
+          <Route path="/events" element={<Layout><Events /></Layout>} />
+          <Route path="/contact" element={<Layout><Contact /></Layout>} />
           
           {/* Student Routes (No Header/Footer) */}
           <Route path="/student-login" element={<StudentLogin />} />

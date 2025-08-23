@@ -8,6 +8,7 @@ import ReviewsSection from "@/components/Contact/ReviewsSection"; // Assuming th
 import { motion } from "framer-motion";
 import { contactAPI } from "../services/api"; // Make sure api.js is updated
 import { toast } from "sonner";
+import ScrollToTopButton from "../components/common/ScrollToTopButton";
 
 const Contact = () => {
     const [formData, setFormData] = useState({
@@ -337,6 +338,8 @@ const Contact = () => {
                 {/* Reviews Section */}
                 <ReviewsSection />
             </main>
+
+               <ScrollToTopButton/>
         </div>
     );
 };

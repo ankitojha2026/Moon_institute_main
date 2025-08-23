@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <img 
-                src="/images/efb325c5-2d6a-4440-a05d-13950ca4d29c.png" 
+                src="/images/logo.png" 
                 alt="The Moon Institute Logo" 
                 className="w-10 h-10 object-contain rounded-full"
               />
