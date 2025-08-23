@@ -23,6 +23,7 @@ import { studentAPI } from '../../services/api';
 import { toast } from 'sonner';
 import { logout } from '../../utils/auth';
 import './AdminDashboard.css';
+import ResultsManagement from './ResultsManagement';
 
 const Sidebar = ({ isOpen, toggleSidebar, hasBirthdayToday, isCheckingBirthdays }) => {
   const location = useLocation();
@@ -36,6 +37,7 @@ const Sidebar = ({ isOpen, toggleSidebar, hasBirthdayToday, isCheckingBirthdays 
     { path: '/admin/courses-form', icon: <BookOpen size={20} />, label: 'Add Course' },
     { path: '/admin/events-management', icon: <Calendar size={20} />, label: 'Events Management' },
     { path: '/admin/events-form', icon: <Calendar size={20} />, label: 'Add Event' },
+    {path: '/admin/results-management', icon: <BarChart3 size={20} />, label: 'Results Management' },
     {
       path: '/admin/birthday',
       icon: <Cake size={20} />,
@@ -198,6 +200,7 @@ const AdminDashboard = () => {
               <Route path="/courses-form" element={<CoursesForm />} />
               <Route path="/events-management" element={<EventsManagement />} />
               <Route path="/events-form" element={<EventsForm />} />
+              <Route path="/results-management" element={<ResultsManagement /> }/>
               <Route path="/birthday" element={<BirthdayPage />} />
             </Routes>
           </div>

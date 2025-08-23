@@ -174,6 +174,26 @@ export const courseAPI = {
   },
 };
 
+
+export const resultAPI = {
+  getByStudentId: async (studentId) => {
+    return apiRequest(`/results/get_by_student.php?student_id=${studentId}`);
+  },
+  create: async (resultData) => {
+    return apiRequest('/results/create.php', {
+      method: 'POST',
+      body: JSON.stringify(resultData),
+    });
+  },
+  delete: async (id) => {
+    return apiRequest('/results/delete.php', {
+      method: 'DELETE',
+      body: JSON.stringify({ id: id }),
+    });
+  },
+};
+
+
 // --- BAAKI APIs KE LIYE PLACEHOLDERS ---
 // (Aapko inke liye PHP files banani hongi, fir inko bhi upar diye gaye format mein update karna hoga)
 
@@ -228,6 +248,7 @@ export const healthCheck = async () => {
 export default {
   studentAPI,
   courseAPI,
+  resultAPI,
   eventAPI,
   contactAPI,
   healthCheck,
