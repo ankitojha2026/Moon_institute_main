@@ -1,9 +1,9 @@
 import HeroSection from "@/components/Home/HeroSection";
 import BirthdaySection from "@/components/Home/BirthdaySection";
 import FounderSection from "@/components/Home/FounderSection";
-import TopStudentsSection from "@/components/Home/TopStudentsSection";
 import WhyChooseSection from "@/components/Home/WhyChooseSection";
 import HeroSectionSlider from "@/components/Home/HeroSectionSlider";
+import ToperStudentsSection from "../components/Home/ToperStudentSection";
 
 const Index = () => {
   return (
@@ -11,7 +11,9 @@ const Index = () => {
       <main>
         <HeroSection />
         <HeroSectionSlider />
+
         <BirthdaySection />
+        <ToperStudentsSection/>
         <FounderSection />
         {/* <TopStudentsSection /> */}
         <WhyChooseSection />

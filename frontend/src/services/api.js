@@ -122,6 +122,14 @@ export const studentAPI = {
       body: JSON.stringify(loginData),
     });
   },
+
+
+getAllWithResults: async () => {
+    return apiRequest('/students/read_with_results.php');
+},
+
+
+
 };
 
 // ... (baaki saare API objects jaise courseAPI, eventAPI, etc. waise hi rahenge)
