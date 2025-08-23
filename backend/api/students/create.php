@@ -1,105 +1,134 @@
 <?php
-// PDO Database connection file
-
-header("Access-Control-Allow-Origin: http://localhost:8080");
+// Headers for CORS and content type
+header("Access-Control-Allow-Origin: *"); // Production mein http://localhost:8080 use karein
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// The browser sends an 'OPTIONS' method request first to check CORS
+// Handle OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // Just send back a 200 OK response for OPTIONS request
     http_response_code(200);
     exit();
 }
 
-include '../../config/database.php';
+// Database connection
+include_once '../../config/database.php';
 
-
-// ------------------ File Upload Logic ------------------
+// --- File Upload Logic ---
 $uploadDir = '../../uploads/student_photos/';
-if (!is_dir($uploadDir)) { 
-    mkdir($uploadDir, 0755, true); 
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
 }
 
 function handleFileUpload($fileKey, $uploadDir) {
     if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES[$fileKey]['tmp_name'];
-        $fileName = time() . '_' . basename($_FILES[$fileKey]['name']); // unique filename
+        $fileName = time() . '_' . uniqid() . '_' . basename($_FILES[$fileKey]['name']);
         $destPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($fileTmpPath, $destPath)) {
-            return $fileName; // ✅ sirf file ka naam return karo
+            return $fileName;
         }
     }
     return null;
 }
 
-
-// Call for photo and result
 $studentPhotoPath = handleFileUpload('studentPhoto', $uploadDir);
-$resultPath = handleFileUpload('result', $uploadDir);
+// resultPath abhi ke liye null rakhte hain kyunki ye create par nahi, update par aayega
+$resultPath = null; 
 
-// ------------------ Get Data from POST ------------------
+// --- Get Data from POST ---
+// React form se bheja gaya data
 $studentName = $_POST['studentName'] ?? '';
 $password = $_POST['password'] ?? '';
-$mobileNumber = $_POST['mobileNumber'] ?? '';
 $fatherName = $_POST['fatherName'] ?? '';
 $gender = $_POST['gender'] ?? '';
-$course = $_POST['course'] ?? '';
-$coursePrice = $_POST['coursePrice'] ?? null;
 $schoolName = $_POST['schoolName'] ?? '';
+$mobileNumber = $_POST['mobileNumber'] ?? '';
 $dateOfBirth = $_POST['dateOfBirth'] ?? null;
 $cast = $_POST['cast'] ?? '';
 $aadharCardNumber = $_POST['aadharCardNumber'] ?? '';
 $fullAddress = $_POST['fullAddress'] ?? '';
 
-// ------------------ Basic Validation ------------------
-if (empty($studentName) || empty($password) || empty($mobileNumber)) {
+// Sabse important: Selected courses ka array
+// React se `selectedCourses[]` bhej rahe hain, to PHP isko ek array ki tarah receive karega
+$selectedCourses = $_POST['selectedCourses'] ?? [];
+
+// --- Basic Validation ---
+if (empty($studentName) || empty($password) || empty($mobileNumber) || empty($selectedCourses)) {
     http_response_code(400);
-    echo json_encode(['message' => 'Required fields are missing: studentName, password, mobileNumber.']);
+    echo json_encode(['message' => 'Required fields are missing: studentName, password, mobileNumber, and at least one course.']);
+    exit;
+}
+
+// Validate if selectedCourses is actually an array
+if (!is_array($selectedCourses)) {
+    http_response_code(400);
+    echo json_encode(['message' => 'Invalid format for selected courses.']);
     exit;
 }
 
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-// ------------------ Database Insertion ------------------
-$sql = "INSERT INTO students 
-(student_photo, student_name, password, father_name, gender, course, course_price, school_name, mobile_number, date_of_birth, cast, aadhar_card_number, full_address, result_path) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
+// --- Database Insertion with Transaction ---
 try {
-    $stmt = $pdo->prepare($sql);
+    // 1. Transaction Shuru Karein
+    $pdo->beginTransaction();
+
+    // 2. Student ko `students` table mein insert karein (bina course aur course_price ke)
+    $sqlStudent = "INSERT INTO students 
+        (student_photo, student_name, password, father_name, gender, school_name, mobile_number, date_of_birth, cast, aadhar_card_number, full_address) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
-    $stmt->execute([
+    $stmtStudent = $pdo->prepare($sqlStudent);
+    
+    $stmtStudent->execute([
         $studentPhotoPath,
         $studentName,
         $hashedPassword,
         $fatherName,
         $gender,
-        $course,
-        $coursePrice,
         $schoolName,
         $mobileNumber,
         $dateOfBirth,
         $cast,
         $aadharCardNumber,
         $fullAddress,
-        $resultPath
+    
     ]);
     
-    $lastId = $pdo->lastInsertId();
+    // Naye student ki ID prapt karein
+    $lastStudentId = $pdo->lastInsertId();
+
+    // 3. Har selected course ke liye `student_courses` junction table mein entry karein
+    if ($lastStudentId && !empty($selectedCourses)) {
+        $sqlStudentCourse = "INSERT INTO student_courses (student_id, course_id) VALUES (?, ?)";
+        $stmtStudentCourse = $pdo->prepare($sqlStudentCourse);
+
+        foreach ($selectedCourses as $courseId) {
+            // Har course ID ke liye statement execute karein
+            $stmtStudentCourse->execute([$lastStudentId, $courseId]);
+        }
+    }
+
+    // 4. Sab kuch theek raha, to transaction ko commit (save) karein
+    $pdo->commit();
     
+    // Success response
     http_response_code(201);
     echo json_encode([
-        'message' => 'Student created successfully.',
-        'studentId' => $lastId,
-        'studentPhotoPath' => $studentPhotoPath, // Debug info
-        'resultPath' => $resultPath              // Debug info
+        'message' => 'Student and course enrollments created successfully.',
+        'studentId' => $lastStudentId
     ]);
 
 } catch (PDOException $e) {
+    // 5. Agar koi bhi error aati hai, to transaction ko rollback (undo) karein
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    
+    // Error response
     http_response_code(500);
     if ($e->getCode() == '23000') {
         echo json_encode(['message' => 'This mobile number is already registered.']);

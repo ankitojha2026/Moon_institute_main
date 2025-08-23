@@ -4,16 +4,13 @@ import {
   User, 
   Calendar, 
   BookOpen, 
-  FileText, 
   LogOut, 
-  Download
+  Download,
+  BookCopy // New icon
 } from 'lucide-react';
 import { CiLocationArrow1 } from "react-icons/ci";
-
 import { IoCallOutline, IoSchoolOutline } from 'react-icons/io5';
-import { FaRegAddressCard} from 'react-icons/fa';
-import { studentAPI } from '../services/api';
-
+import { FaRegAddressCard } from 'react-icons/fa';
 import { toast } from 'sonner';
 
 const StudentData = () => {
@@ -22,22 +19,26 @@ const StudentData = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if student is logged in
     const studentToken = localStorage.getItem('studentToken');
     const storedStudentData = localStorage.getItem('studentData');
 
     if (!studentToken || !storedStudentData) {
-      toast.error('Please login to access student data');
+      toast.error('Please login to access the dashboard.');
       navigate('/student-login');
       return;
     }
 
     try {
       const student = JSON.parse(storedStudentData);
+      // Ensure 'enrolledCourses' is an array, even if it's not present
+      student.enrolledCourses = student.enrolledCourses || [];
       setStudentData(student);
     } catch (error) {
       console.error('Error parsing student data:', error);
-      toast.error('Error loading student data');
+      toast.error('Error loading student data. Please log in again.');
+      // Clear potentially corrupted data
+      localStorage.removeItem('studentToken');
+      localStorage.removeItem('studentData');
       navigate('/student-login');
     } finally {
       setLoading(false);
@@ -51,30 +52,13 @@ const StudentData = () => {
     navigate('/student-login');
   };
 
-
-
-    console.log('Student Data:', studentData);
-
-
-
-
-
-
-
-
-  const handleViewPDF = (pdfUrl) => {
-    if (pdfUrl) {
+  const handleViewPDF = (pdfPath) => {
+    if (pdfPath) {
+      // Assuming the path is relative, construct the full URL
+      const pdfUrl = `http://localhost/moon/backend/uploads/course_pdfs/${pdfPath}`;
       window.open(pdfUrl, '_blank');
     } else {
-      toast.error('PDF not available for this course');
-    }
-  };
-
-  const handleViewResult = (resultUrl) => {
-    if (resultUrl) {
-      window.open(resultUrl, '_blank');
-    } else {
-      toast.error('Result not available');
+      toast.error('PDF not available for this course.');
     }
   };
 
@@ -88,53 +72,35 @@ const StudentData = () => {
     });
   };
 
+  // Helper to format currency
+  const formatPrice = (price) => {
+    const numPrice = Number(price);
+    if (isNaN(numPrice)) return 'N/A';
+    return `₹${numPrice.toLocaleString('en-IN')}`;
+  };
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading student data...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p>Loading...</p></div>;
   }
 
   if (!studentData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No student data found</p>
-          <button 
-            onClick={() => navigate('/student-login')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p>No data found.</p></div>;
   }
 
+  // --- UPDATED JSX/UI ---
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">Student Dashboard</h1>
-            </div>
-            
+            <h1 className="text-xl font-semibold text-gray-900">Student Dashboard</h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welcome, <span className="font-medium text-gray-900">{studentData.studentName}</span>
+                Welcome, <span className="font-medium text-gray-900">{studentData.student_name}</span>
               </span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <button onClick={handleLogout} className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+                <LogOut className="w-4 h-4 mr-2" /> Logout
               </button>
             </div>
           </div>
@@ -143,162 +109,92 @@ const StudentData = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
           {/* Student Profile Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="text-center">
-                {/* Student Image */}
                 <div className="mb-6">
-
                   {studentData.studentPhotoUrl ? (
-                    <img
-                      src={studentData.studentPhotoUrl}
-                      alt={studentData.studentName}
-                      className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-blue-100"
-                    />
+                    <img src={studentData.studentPhotoUrl} alt={studentData.student_name} className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-blue-100" />
                   ) : (
                     <div className="w-32 h-32 rounded-full mx-auto bg-blue-100 flex items-center justify-center">
                       <User className="w-16 h-16 text-blue-400" />
                     </div>
                   )}
-
-
                 </div>
-
-                {/* Student Info */}
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {studentData.student_name}
-                </h2>
-                
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{studentData.student_name}</h2>
                 <div className="space-y-3 text-left">
-
-                  {/* date_of_birth */}
-                  <div className="flex items-center text-gray-600">
-                    <Calendar className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-sm">
-                      <span className="font-medium">Date of Birth:</span> {formatDate(studentData.
-date_of_birth)}
-                    </span>
-                  </div>
-
-                  {/* aadharcard */}
-
-                        <div className="flex items-center text-gray-600">
-                    <FaRegAddressCard className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-sm">
-                      <span className="font-medium">Aadhar No:</span> {(studentData.
-aadhar_card_number)}
-                    </span>
-                  </div>
-                            {/* mobile number */}
-                        <div className="flex items-center text-gray-600">
-                    <IoCallOutline className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-sm">
-                      <span className="font-medium">Mobile Number:</span> {(studentData.
-mobile_number)}
-                    </span>
-                  </div>
-
-                        {/* gender */}
-                        <div className="flex items-center text-gray-600">
-                    <CiLocationArrow1 className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-sm">
-                      <span className="font-medium">Gender:</span> {(studentData.
-gender)}
-                    </span>
-                  </div>
-
-
-                        <div className="flex items-center text-gray-600">
-                    <IoSchoolOutline className="w-4 h-4 mr-3 text-blue-500" />
-                    <span className="text-sm">
-                      <span className="font-medium">School Name:</span> {(studentData.
-school_name)}
-                    </span>
-                  </div>
-
-
-
+                  {/* Other details */}
+                  <div className="flex items-center text-gray-600"><Calendar className="w-4 h-4 mr-3 text-blue-500" /><span className="text-sm"><span className="font-medium">DOB:</span> {formatDate(studentData.date_of_birth)}</span></div>
+                  <div className="flex items-center text-gray-600"><FaRegAddressCard className="w-4 h-4 mr-3 text-blue-500" /><span className="text-sm"><span className="font-medium">Aadhar:</span> {studentData.aadhar_card_number}</span></div>
+                  <div className="flex items-center text-gray-600"><IoCallOutline className="w-4 h-4 mr-3 text-blue-500" /><span className="text-sm"><span className="font-medium">Mobile:</span> {studentData.mobile_number}</span></div>
+                  <div className="flex items-center text-gray-600"><IoSchoolOutline className="w-4 h-4 mr-3 text-blue-500" /><span className="text-sm"><span className="font-medium">School:</span> {studentData.school_name}</span></div>
                   
-
-
-
-
-
-                  {/* course */}
-                  <div className="flex items-center text-gray-600">
-                    <BookOpen className="w-4 h-4 mr-3 text-blue-500" />
+                  {/* UPDATED: Displaying all course names */}
+                  <div className="flex items-start text-gray-600">
+                    <BookCopy className="w-4 h-4 mr-3 text-blue-500 mt-1 flex-shrink-0" />
                     <span className="text-sm">
-                      <span className="font-medium">Course:</span> {studentData.course
- || 'Not assigned'}
+                      <span className="font-medium">Enrolled Courses:</span> 
+                      {studentData.enrolledCourses.length > 0 
+                        ? studentData.enrolledCourses.map(course => course.course_name).join(', ') 
+                        : 'Not assigned'
+                      }
                     </span>
                   </div>
-
-
-
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Course Details Card */}
+          {/* Course Details Card - COMPLETELY UPDATED */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <BookOpen className="w-5 h-5 mr-2 text-blue-500" />
-                  Course Information
+                  <BookOpen className="w-5 h-5 mr-2 text-blue-500" /> Course Information
                 </h3>
               </div>
-
-                             {studentData.course ? (
-                 <div className="space-y-6">
-                   {/* Course Details in Single Row */}
-                   <div className="bg-gray-50 rounded-lg p-6">
-                     <div className="flex items-center justify-between">
-                       <div className="flex items-center space-x-6">
-                         <div className="bg-blue-50 rounded-lg p-4">
-                           <h4 className="font-medium text-blue-900 mb-1 text-sm">Course Name</h4>
-                           <p className="text-blue-800 font-semibold">{studentData.course.courseName}</p>
-                         </div>
-                         
-                         <div className="bg-green-50 rounded-lg p-4">
-                           <h4 className="font-medium text-green-900 mb-1 text-sm">Course Fee</h4>
-                           <p className="text-green-800 font-semibold">
-                             ₹{studentData.coursePrice?.toLocaleString('en-IN') || 'Not available'}
-                           </p>
-                         </div>
-                       </div>
-                       
-                                               <div className="flex items-center space-x-3">
-                          {studentData.course.coursePdfUrl && (
+              
+              {studentData.enrolledCourses && studentData.enrolledCourses.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Fee</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {studentData.enrolledCourses.map((course) => (
+                        <tr key={course.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{course.course_name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700">{formatPrice(course.price)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <button
-                              onClick={() => handleViewPDF(studentData.course.coursePdfUrl)}
-                              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                              onClick={() => handleViewPDF(course.course_pdf_path)}
+                              disabled={!course.course_pdf_path}
+                              className="flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                               <Download className="w-4 h-4 mr-2" />
                               View PDF
                             </button>
-                          )}
-                          
-                          {studentData.result?.url && (
-                            <button
-                              onClick={() => handleViewResult(studentData.result.url)}
-                              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              View Result
-                            </button>
-                          )}
-                        </div>
-                     </div>
-                   </div>
-                 </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Course Assigned</h4>
-                  <p className="text-gray-600">Please contact the administration to get assigned to a course.</p>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Courses Enrolled</h4>
+                  <p className="text-gray-600">You are not currently enrolled in any courses.</p>
                 </div>
               )}
             </div>

@@ -1,68 +1,93 @@
 <?php
 // Headers
-header("Access-Control-Allow-Origin: http://localhost:8080");
+header("Access-Control-Allow-Origin: *"); // Production mein `http://localhost:8080` use karna behtar hai
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// The browser sends an 'OPTIONS' method request first to check CORS
+// Handle OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // Just send back a 200 OK response for OPTIONS request
     http_response_code(200);
     exit();
 }
 
-// Include database and object files
+// Include database
 include_once '../../config/database.php';
 
 try {
-    // Prepare a select query
-    $query = "SELECT id, student_name, father_name, gender, course, mobile_number, full_address, student_photo FROM students ORDER BY created_at DESC";
+    // --- UPDATED SQL QUERY ---
+    // Hum teen tables ko join kar rahe hain:
+    // 1. `students` (s) - Student ki main details ke liye
+    // 2. `student_courses` (sc) - Student aur course ke beech ka link
+    // 3. `courses` (c) - Course ka naam lene ke liye
+    $query = "
+        SELECT 
+            s.id, 
+            s.student_name, 
+            s.father_name, 
+            s.gender, 
+            s.mobile_number, 
+            s.full_address, 
+            s.student_photo,
+            -- GROUP_CONCAT student ke saare courses ko ek comma-separated string mein jod dega
+            GROUP_CONCAT(c.course_name SEPARATOR ', ') AS enrolled_courses
+        FROM 
+            students s
+        LEFT JOIN 
+            student_courses sc ON s.id = sc.student_id
+        LEFT JOIN 
+            courses c ON sc.course_id = c.id
+        GROUP BY 
+            s.id -- Yeh zaroori hai taaki har student ke liye ek hi row aaye
+        ORDER BY 
+            s.created_at DESC
+    ";
     
     $stmt = $pdo->prepare($query);
     $stmt->execute();
     
     $num = $stmt->rowCount();
 
-    // Check if more than 0 record found
     if ($num > 0) {
-        $students_arr = array();
-        $students_arr["records"] = array();
+        $students_arr = [];
+        $students_arr["records"] = [];
 
-        // Retrieve our table contents
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // extract row
-            // this will make $row['name'] to just $name only
-            extract($row);
-            
-            // Add a full URL path for the photo
-            $photo_url = !empty($student_photo) 
-    ? "http://localhost/moon/backend/uploads/student_photos/" . $student_photo 
-    : null;
+            // Pura URL banao photo ke liye
+            $photo_url = !empty($row['student_photo']) 
+                ? "http://localhost/moon/backend/uploads/student_photos/" . $row['student_photo'] 
+                : null;
 
-            $student_item = array(
-                "id" => $id,
-                "studentName" => $student_name,
-                "fatherName" => $father_name,
-                "gender" => $gender,
-                "course" => $course,
-                "mobileNumber" => $mobile_number,
-                "fullAddress" => $full_address,
+            // Student item ka naya structure
+            $student_item = [
+                "id" => $row['id'],
+                "studentName" => $row['student_name'],
+                "fatherName" => $row['father_name'],
+                "gender" => $row['gender'],
+                // `course` ki jagah ab humara naya `enrolled_courses` field
+                "enrolledCourses" => $row['enrolled_courses'] ?? 'No courses enrolled', // Agar koi course nahi hai to default text
+                "mobileNumber" => $row['mobile_number'],
+                "fullAddress" => $row['full_address'],
                 "studentPhotoUrl" => $photo_url
-            );
+            ];
 
             array_push($students_arr["records"], $student_item);
         }
 
         http_response_code(200);
         echo json_encode($students_arr);
+
     } else {
         http_response_code(404);
-        echo json_encode(array("message" => "No students found."));
+        echo json_encode(["message" => "No students found."]);
     }
+
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(array("message" => "Unable to fetch students.", "error" => $e->getMessage()));
+    echo json_encode(["message" => "Unable to fetch students.", "error" => $e->getMessage()]);
 }
+
+// Close connection
+$pdo = null;
 ?>

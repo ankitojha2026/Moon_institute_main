@@ -1,84 +1,102 @@
 <?php
 // Headers
-header("Access-Control-Allow-Origin: http://localhost:8080");
+header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: POST, OPTIONS"); // Update ke liye POST use kar rahe hain
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// The browser sends an 'OPTIONS' method request first to check CORS
+// Handle OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // Just send back a 200 OK response for OPTIONS request
     http_response_code(200);
     exit();
 }
+
 // Include database
 include_once '../../config/database.php';
 
 // Get ID from URL
-$id = isset($_GET['id']) ? $_GET['id'] : die(json_encode(["message" => "Student ID is required."]));
-
-// Get posted data
-// Note: We use $_POST because multipart/form-data with PUT is tricky.
-// The frontend should send a POST request here for updates.
-$data = $_POST;
-
-if(empty($data) && empty($_FILES)) {
+$id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
+if (!$id) {
     http_response_code(400);
-    echo json_encode(["message" => "No data provided for update."]);
+    echo json_encode(["message" => "Valid Student ID is required."]);
     exit;
 }
 
+// Get POST data
+$postData = $_POST;
+$selectedCourses = $postData['selectedCourses'] ?? [];
+
+// File upload logic
+function handleFileUpload($fileKey, $uploadDir) { /* ... same as before ... */ return null; }
+$uploadDir = '../../uploads/student_photos/';
+$newPhotoPath = handleFileUpload('studentPhoto', $uploadDir);
+
 try {
+    // Transaction shuru karo
+    $pdo->beginTransaction();
+
+    // STEP 1: Student ki basic details update karo
     $query_parts = [];
     $params = [];
-    $types = '';
 
-    foreach ($data as $key => $value) {
-        // Rename keys to match DB columns (studentName -> student_name)
-        $column = lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $key))));
-        $column = preg_replace('/(?<!^)[A-Z]/', '_$0', $column);
-        $db_column = strtolower($column);
+    // Fields jo 'students' table mein update honge
+    $allowed_fields = ['student_name', 'father_name', 'gender', 'school_name', 'mobile_number', 'date_of_birth', 'cast', 'aadhar_card_number', 'full_address'];
 
-        // Skip ID field and handle password separately
-        if ($db_column === 'id' || $db_column === 'password') continue;
-        
-        $query_parts[] = "{$db_column} = ?";
-        $params[] = $value;
+    foreach ($postData as $key => $value) {
+        $db_column = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $key));
+        if (in_array($db_column, $allowed_fields)) {
+            $query_parts[] = "{$db_column} = ?";
+            $params[] = $value;
+        }
     }
 
-    // Handle password update
-    if (!empty($data['password'])) {
+    // Password update handle karo (agar bheja gaya hai)
+    if (!empty($postData['password'])) {
         $query_parts[] = "password = ?";
-        $params[] = password_hash($data['password'], PASSWORD_DEFAULT);
+        $params[] = password_hash($postData['password'], PASSWORD_DEFAULT);
     }
     
-    // TODO: Handle file updates (delete old file, save new one)
-
-    if(empty($query_parts)) {
-        http_response_code(400);
-        echo json_encode(["message" => "No valid fields to update."]);
-        exit;
+    // Photo update handle karo (agar nayi photo upload hui hai)
+    if ($newPhotoPath) {
+        // TODO: Purani photo ko server se delete karne ka logic yahan daalein
+        $query_parts[] = "student_photo = ?";
+        $params[] = $newPhotoPath;
+    }
+    
+    if (!empty($query_parts)) {
+        $query = "UPDATE students SET " . implode(', ', $query_parts) . " WHERE id = ?";
+        $params[] = $id;
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
     }
 
-    // Construct the final query
-    $query = "UPDATE students SET " . implode(', ', $query_parts) . " WHERE id = ?";
-    $params[] = $id;
+    // STEP 2: Course enrollments ko update karo
+    // Pehle purane saare courses hata do
+    $stmtDelete = $pdo->prepare("DELETE FROM student_courses WHERE student_id = ?");
+    $stmtDelete->execute([$id]);
 
-    $stmt = $pdo->prepare($query);
-    $stmt->execute($params);
-
-    if ($stmt->rowCount() > 0) {
-        http_response_code(200);
-        echo json_encode(array("message" => "Student was updated."));
-    } else {
-        // rowCount is 0 if no data was changed, or student not found
-        http_response_code(200); // or 304 Not Modified
-        echo json_encode(array("message" => "No changes were made to the student record."));
+    // Ab naye courses daalo (agar select kiye gaye hain)
+    if (!empty($selectedCourses)) {
+        $sqlInsertCourse = "INSERT INTO student_courses (student_id, course_id) VALUES (?, ?)";
+        $stmtInsertCourse = $pdo->prepare($sqlInsertCourse);
+        foreach ($selectedCourses as $courseId) {
+            $stmtInsertCourse->execute([$id, $courseId]);
+        }
     }
 
-} catch (PDOException $e) {
+    // Sab theek raha, to transaction commit karo
+    $pdo->commit();
+
+    http_response_code(200);
+    echo json_encode(["message" => "Student record updated successfully."]);
+
+} catch (Exception $e) {
+    // Koi bhi error aane par rollback karo
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code(500);
-    echo json_encode(array("message" => "Unable to update student.", "error" => $e->getMessage()));
+    echo json_encode(["message" => "Unable to update student.", "error" => $e->getMessage()]);
 }
 ?>

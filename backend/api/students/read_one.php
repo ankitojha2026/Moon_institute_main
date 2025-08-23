@@ -1,62 +1,96 @@
 <?php
 // Headers
-header("Access-Control-Allow-Origin: http://localhost:8080");
+header("Access-Control-Allow-Origin: *"); // Production mein `http://localhost:8080` use karein
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// The browser sends an 'OPTIONS' method request first to check CORS
+// Handle OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // Just send back a 200 OK response for OPTIONS request
     http_response_code(200);
     exit();
 }
+
 // Include database
 include_once '../../config/database.php';
 
-// Get ID from URL
-$id = isset($_GET['id']) ? $_GET['id'] : die();
+// Get ID from URL and validate it
+$id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
+
+if ($id === false || $id === null) {
+    http_response_code(400);
+    echo json_encode(["message" => "Invalid Student ID."]);
+    exit();
+}
 
 try {
-    // Prepare a select query
-    $query = "SELECT * FROM students WHERE id = ? LIMIT 0,1";
-
-    $stmt = $pdo->prepare($query);
-    $stmt->bindParam(1, $id);
-    $stmt->execute();
+    // --- Query 1: Student ki basic details fetch karo ---
+    $sqlStudent = "SELECT * FROM students WHERE id = ?";
+    $stmtStudent = $pdo->prepare($sqlStudent);
+    $stmtStudent->execute([$id]);
     
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $student = $stmtStudent->fetch(PDO::FETCH_ASSOC);
 
-    if($row) {
-        // Create array
-        $student_arr = array(
-            "id" => $row['id'],
-            "studentName" => $row['student_name'],
-            "password" => "********", // Never send the real password
-            "fatherName" => $row['father_name'],
-            "gender" => $row['gender'],
-            "course" => $row['course'],
-            "coursePrice" => $row['course_price'],
-            "schoolName" => $row['school_name'],
-            "mobileNumber" => $row['mobile_number'],
-            "dateOfBirth" => $row['date_of_birth'],
-            "cast" => $row['cast'],
-            "aadharCardNumber" => $row['aadhar_card_number'],
-            "fullAddress" => $row['full_address'],
-            "studentPhotoUrl" => !empty($row['student_photo']) ? "http://{$_SERVER['HTTP_HOST']}/moon/backend/uploads/student_photos/{$row['student_photo']}" : null,
-            "resultUrl" => !empty($row['result_path']) ? "http://{$_SERVER['HTTP_HOST']}/uploads/student_results/{$row['result_path']}" : null,
-            "createdAt" => $row['created_at']
-        );
-
-        http_response_code(200);
-        echo json_encode($student_arr);
-    } else {
+    if (!$student) {
         http_response_code(404);
-        echo json_encode(array("message" => "Student not found."));
+        echo json_encode(["message" => "Student not found."]);
+        exit;
     }
+
+    // --- Query 2: Uss student ke saare enrolled courses fetch karo ---
+    $sqlCourses = "
+        SELECT 
+            c.id, 
+            c.course_name, 
+            c.price,
+            c.course_pdf_path
+        FROM 
+            student_courses sc
+        JOIN 
+            courses c ON sc.course_id = c.id
+        WHERE 
+            sc.student_id = ?
+    ";
+    $stmtCourses = $pdo->prepare($sqlCourses);
+    $stmtCourses->execute([$id]);
+    
+    $enrolledCoursesDetails = $stmtCourses->fetchAll(PDO::FETCH_ASSOC);
+
+    // Sirf course IDs ka ek alag array banayein (edit form ke liye)
+    $enrolledCourseIds = array_map(function($course) {
+        return (int)$course['id']; // Ensure IDs are integers
+    }, $enrolledCoursesDetails);
+
+    // --- Final Response Combine Karo ---
+    
+    // Photo aur result ke liye poora URL banayein
+    $student['studentPhotoUrl'] = !empty($student['student_photo']) 
+        ? "http://{$_SERVER['HTTP_HOST']}/moon/backend/uploads/student_photos/{$student['student_photo']}" 
+        : null;
+
+    // result_path ab students table mein nahi hai, to isko comment out ya hata dein.
+    // $student['resultUrl'] = ...
+    
+    // Course details aur IDs ko final student object mein add karein
+    $student['enrolled_courses_details'] = $enrolledCoursesDetails; // Full details of courses
+    $student['enrolled_courses'] = $enrolledCourseIds;         // Just an array of course IDs [1, 4]
+
+    // Ab `course`, `course_price` jaise purane fields ki zaroorat nahi
+    unset($student['course']);
+    unset($student['course_price']);
+    unset($student['result_path']); // Yeh column ab exist nahi karta
+    
+    // Kabhi bhi password hash response mein na bhejें
+    unset($student['password']); 
+
+    http_response_code(200);
+    echo json_encode($student);
+
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(array("message" => "Unable to fetch student.", "error" => $e->getMessage()));
+    echo json_encode(['message' => 'Failed to fetch student details.', 'error' => $e->getMessage()]);
 }
+
+$pdo = null;
 ?>

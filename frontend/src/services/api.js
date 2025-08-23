@@ -38,24 +38,40 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
+// src/services/api.js
+
+// ... (API_BASE_URL aur apiRequest function waise hi rahenge)
+
 // Student API functions
 export const studentAPI = {
-  // Create new student (Updated for FormData)
+  // Create new student (Updated to handle the courses array correctly)
   create: async (studentData) => {
     const formData = new FormData();
+
+    // Loop through all keys in studentData
     for (const key in studentData) {
-      formData.append(key, studentData[key]);
+      if (key === 'selectedCourses') {
+        // Agar key 'selectedCourses' hai, to array ke har item ko alag se append karo
+        // PHP isko $_POST['selectedCourses'] mein ek array ki tarah receive karega
+        studentData[key].forEach(courseId => {
+          formData.append('selectedCourses[]', courseId);
+        });
+      } else {
+        // Baaki sabhi keys ko waise hi append karo
+        formData.append(key, studentData[key]);
+      }
     }
+
     return apiRequest('/students/create.php', {
       method: 'POST',
       body: formData,
     });
   },
-  // Get birthday feed (Updated to return 7 students)
-   getBirthdayFeed: async () => {
+
+  // Get birthday feed
+  getBirthdayFeed: async () => {
     return apiRequest('/students/birthday_feed.php');
   },
-
 
   // Get all students
   getAll: async (params = {}) => {
@@ -68,20 +84,31 @@ export const studentAPI = {
     return apiRequest(`/students/read_one.php?id=${id}`);
   },
 
-  // Update student (Updated for FormData and POST method)
+  // Update student (Updated to handle the courses array correctly)
   update: async (id, studentData) => {
     const formData = new FormData();
+
+    // Loop through all keys in studentData
     for (const key in studentData) {
-      formData.append(key, studentData[key]);
+      if (key === 'selectedCourses') {
+        // Agar key 'selectedCourses' hai, to array ke har item ko alag se append karo
+        studentData[key].forEach(courseId => {
+          formData.append('selectedCourses[]', courseId);
+        });
+      } else {
+        // Baaki sabhi keys ko waise hi append karo
+        formData.append(key, studentData[key]);
+      }
     }
-    // Note: Using POST for updates to reliably handle multipart/form-data
+    
+    // Using POST for updates to reliably handle multipart/form-data
     return apiRequest(`/students/update.php?id=${id}`, {
       method: 'POST',
       body: formData,
     });
   },
 
-  // Delete student (Updated to send ID in body)
+  // ... (delete and login functions waise hi rahenge)
   delete: async (id) => {
     return apiRequest(`/students/delete.php`, {
       method: 'DELETE',
@@ -89,7 +116,6 @@ export const studentAPI = {
     });
   },
 
-  // Student login
   login: async (loginData) => {
     return apiRequest('/students/login.php', {
       method: 'POST',
@@ -97,6 +123,10 @@ export const studentAPI = {
     });
   },
 };
+
+// ... (baaki saare API objects jaise courseAPI, eventAPI, etc. waise hi rahenge)
+
+
 
 // Course API functions
 export const courseAPI = {
